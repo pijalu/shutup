@@ -1,88 +1,24 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <lvgl.h>
-#include <TFT_eSPI.h> // Hardware-specific library for ESP32
+#include <TFT_eSPI.h> 
+
 
 #include "defs.h"
 #include "touch.h"
 #include "utils.h"
+#include "ui.h"
 
-/*Set to your screen resolution and rotation*/
-#define TFT_HOR_RES   TFT_WIDTH
-#define TFT_VER_RES   TFT_HEIGHT
-#define TFT_ROTATION  LV_DISPLAY_ROTATION_0
-
-/*LVGL draw into this buffer, 1/10 screen size usually works well. The size is in bytes*/
-#define DRAW_BUF_SIZE (TFT_HOR_RES * TFT_VER_RES / 10 * (LV_COLOR_DEPTH / 8))
-uint32_t draw_buf[DRAW_BUF_SIZE / 4];
 
 TFT_eSPI tft = TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
 
-#if LV_USE_LOG != 0
-void my_print( lv_log_level_t level, const char * buf )
-{
-    LV_UNUSED(level);
-    Serial.println(buf);
-    Serial.flush();
-}
-#endif
 
+#include "NotoSansBold15.h"
+#include "NotoSansBold36.h"
 
-/* LVGL calls it when a rendered image needs to copied to the display*/
-void my_disp_flush( lv_display_t *disp, const lv_area_t *area, uint8_t * px_map)
-{
-
-    /*Copy `px map` to the `area`*/
-
-    /*For example ("my_..." functions needs to be implemented by you)
-    uint32_t w = lv_area_get_width(area);
-    uint32_t h = lv_area_get_height(area);
-
-    my_set_window(area->x1, area->y1, w, h);
-    my_draw_bitmaps(px_map, w * h);
-     */
-
-    /*Call it to tell LVGL you are ready*/
-    lv_display_flush_ready(disp);
-}
-
-// Get the Touchscreen data
-void touchscreen_read(lv_indev_t * indev, lv_indev_data_t * data) {
-  u_int16_t x,y,z;
-  if (getTouch(&x,&y,&z)) {
-    data->state = LV_INDEV_STATE_PRESSED;
-    // Set the coordinates
-    data->point.x = x;
-    data->point.y = y;
-  }
-  else {
-    data->state = LV_INDEV_STATE_RELEASED;
-  }
-}
-
-/*Read the touchpad*/
-void my_touchpad_read( lv_indev_t * indev, lv_indev_data_t * data )
-{
-    /*For example  ("my_..." functions needs to be implemented by you)
-    int32_t x, y;
-    bool touched = my_get_touch( &x, &y );
-
-    if(!touched) {
-        data->state = LV_INDEV_STATE_RELEASED;
-    } else {
-        data->state = LV_INDEV_STATE_PRESSED;
-
-        data->point.x = x;
-        data->point.y = y;
-    }
-     */
-}
-
-/*use Arduinos millis() as tick source*/
-static uint32_t my_tick(void)
-{
-    return millis();
-}
+// The font names are arrays references, thus must NOT be in quotes ""
+#define AA_FONT_SMALL NotoSansBold15
+#define AA_FONT_LARGE NotoSansBold36
 
 
 void setup() {
@@ -92,42 +28,125 @@ void setup() {
   Serial.println("Starting tft system");
   tft.init();
   tft.setRotation(TFT_ROTATION);
-
+#if 0
   Serial.println("Setting up touch subsystem");
   touchSetup();
 
-  String LVGL_startup = "Setting up LVGL ";
-  LVGL_startup += String("V") + lv_version_major() + "." + lv_version_minor() + "." + lv_version_patch();
-
-  Serial.println( LVGL_startup );
-  lv_init();
-
-  /*Set a tick source so that LVGL will know how much time elapsed. */
-  lv_tick_set_cb(my_tick);
-
-  /* register print function for debugging */
-#if LV_USE_LOG != 0
-  lv_log_register_print_cb( my_print );
+  ui_setup();
 #endif
-
-  lv_display_t * disp;
-  disp = lv_tft_espi_create(TFT_HOR_RES, TFT_VER_RES, draw_buf, sizeof(draw_buf));
-  lv_display_set_rotation(disp, TFT_ROTATION);
-
-  /*Initialize the (dummy) input device driver*/
-  lv_indev_t * indev = lv_indev_create();
-  lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER); /*Touchpad should have POINTER type*/
-  lv_indev_set_read_cb(indev, touchscreen_read);
-
-  lv_obj_t *label = lv_label_create( lv_screen_active() );
-  lv_label_set_text( label, "Hello Arduino, I'm LVGL!" );
-  lv_obj_align( label, LV_ALIGN_CENTER, 0, 0 );
-
-
   Serial.println("Start up finished");
 }
 
 void loop() {
-  lv_timer_handler(); /* let the GUI do its work */
-  delay(5); /* let this time pass */
+#if 0
+  ui_loop();
+#endif
+
+  tft.fillScreen(TFT_BLACK);
+
+  tft.setTextColor(TFT_WHITE, TFT_BLACK); // Set the font colour AND the background colour
+                                          // so the anti-aliasing works
+
+  tft.setCursor(0, 0); // Set cursor at top left of screen
+
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // Small font
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  Serial.println("Loading font");
+
+  tft.loadFont(AA_FONT_SMALL);    // Must load the font first
+
+  tft.println("Small 15pt font"); // println moves cursor down for a new line
+
+  tft.println(); // New line
+
+  tft.print("ABC"); // print leaves cursor at end of line
+
+  tft.setTextColor(TFT_CYAN, TFT_BLACK);
+  tft.println("1234"); // Added to line after ABC
+
+  tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+  // print stream formatting can be used,see:
+  // https://www.arduino.cc/en/Serial/Print
+  int ivalue = 1234;
+  tft.println(ivalue);       // print as an ASCII-encoded decimal
+  tft.println(ivalue, DEC);  // print as an ASCII-encoded decimal
+  tft.println(ivalue, HEX);  // print as an ASCII-encoded hexadecimal
+  tft.println(ivalue, OCT);  // print as an ASCII-encoded octal
+  tft.println(ivalue, BIN);  // print as an ASCII-encoded binary
+
+  tft.println(); // New line
+  tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
+  float fvalue = 1.23456;
+  tft.println(fvalue, 0);  // no decimal places
+  tft.println(fvalue, 1);  // 1 decimal place
+  tft.println(fvalue, 2);  // 2 decimal places
+  tft.println(fvalue, 5);  // 5 decimal places
+
+  delay(5000);
+
+  // Get ready for the next demo while we have this font loaded
+  tft.fillScreen(TFT_BLACK);
+  tft.setCursor(0, 0); // Set cursor at top left of screen
+  tft.setTextColor(TFT_WHITE, TFT_BLACK);
+  tft.println("Wrong and right ways to");
+  tft.println("print changing values...");
+
+  tft.unloadFont(); // Remove the font to recover memory used
+
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // Large font
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  tft.loadFont(AA_FONT_LARGE); // Load another different font
+
+  //tft.fillScreen(TFT_BLACK);
+  
+  // Draw changing numbers - does not work unless a filled rectangle is drawn over the old text
+  for (int i = 0; i <= 99; i++)
+  {
+    tft.setCursor(50, 50);
+    tft.setTextColor(TFT_GREEN, TFT_BLACK); // TFT_BLACK is used for anti-aliasing only
+                                            // By default background fill is off
+    tft.print("      "); // Overprinting old number with spaces DOES NOT WORK!
+    tft.setCursor(50, 50);
+    tft.print(i / 10.0, 1);
+
+    // Adding a parameter "true" to the setTextColor() function fills character background
+    // This extra parameter is only for smooth fonts!
+    tft.setTextColor(TFT_GREEN, TFT_BLACK, true);
+    tft.setCursor(50, 90);
+    tft.print(i / 10.0, 1);
+    
+    delay (200);
+  }
+
+  delay(5000);
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  // Large font text wrapping
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  tft.fillScreen(TFT_BLACK);
+  
+  tft.setTextColor(TFT_YELLOW, TFT_BLACK); // Change the font colour and the background colour
+
+  tft.setCursor(0, 0); // Set cursor at top left of screen
+
+  tft.println("Large font!");
+
+  tft.setTextWrap(true); // Wrap on width
+  tft.setTextColor(TFT_CYAN, TFT_BLACK);
+  tft.println("Long lines wrap to the next line");
+
+  tft.setTextWrap(false, false); // Wrap on width and height switched off
+  tft.setTextColor(TFT_MAGENTA, TFT_BLACK);
+  tft.println("Unless text wrap is switched off");
+
+  tft.unloadFont(); // Remove the font to recover memory used
+
+  delay(8000);
+
 }
