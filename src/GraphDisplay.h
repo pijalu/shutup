@@ -67,8 +67,7 @@ private:
     void drawSensorsData(unsigned long now = millis()) {
         // Initialize the graph buffer
         TFT_eSprite b = TFT_eSprite(tft);
-        b.setColorDepth(8);
-        b.setAttribute(PSRAM_ENABLE, false);  // goes on device ram
+        b.setColorDepth(4);  // 4 colors
 
         b.createSprite(width, height);
         b.fillSprite(TFT_BLACK);
@@ -116,6 +115,9 @@ private:
                 if (X == 0)
                     break;
             }  // end of sensor
+            if (last_X > 0) {
+                b.drawLine(last_X, drawY + pad, 0, drawY + pad, TFT_WHITE);
+            }
         }  // end all sensors
 
         b.pushSprite(x, y);  // Push sprite to display

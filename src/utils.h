@@ -4,6 +4,6 @@
 #include <Arduino.h>
 
 void halt(String error);
+#define MAX(a, b) ((a) > (b)) ? (a) : (b)
 
-
-#endif // UTILS_H
+#endif  // UTILS_H

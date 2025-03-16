@@ -82,12 +82,27 @@ void test_exceptions(void) {
     }
 }
 
+void test_getStateWithValue(void) {
+    SensorManager* sm = new SensorManager();
+
+    // Test get state
+    // Empty series is false
+    TEST_ASSERT_EQUAL(false, sm->getCurrentStatus(0));
+
+    // check with data
+    sm->addToSensorSeries(0, SensorData(true, 1));
+    TEST_ASSERT_EQUAL(true, sm->getCurrentStatus(0));
+    sm->addToSensorSeries(0, SensorData(false, 1));
+    TEST_ASSERT_EQUAL(true, sm->getCurrentStatus(0));
+}
+
 int main(int argc, char** argv) {
     UNITY_BEGIN();
     RUN_TEST(test_singleton);
     RUN_TEST(test_addToSensorSeries);
     RUN_TEST(test_addManyToSensorSeries);
     RUN_TEST(test_exceptions);
+    RUN_TEST(test_getStateWithValue);
 
     UNITY_END();
 }
