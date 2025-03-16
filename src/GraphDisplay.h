@@ -12,7 +12,7 @@ private:
 
     int x, y;           // Position of the graph on screen
     int width, height;  // Size of the graph area
-    u_int64_t maxTime;        // time in MS to show on the graph
+    u_int64_t maxTime;  // time in MS to show on the graph
     uint16_t backgroundColor, gridColor, textColor;
 
     // Sensor display settings
@@ -26,8 +26,8 @@ private:
     u_int32_t lastUpdate = 0;  // last update time for the graph
 
 public:
-    GraphDisplay(TFT_eSPI tft_, int x_, int y_, int width_,
-                 int height_, u_int32_t maxTime_)
+    GraphDisplay(TFT_eSPI tft_, int x_, int y_, int width_, int height_,
+                 u_int32_t maxTime_)
         : tft(tft_),
           x(x_),
           y(y_),
@@ -62,22 +62,13 @@ private:
     void drawGrid(TFT_eSprite* b) {
         b->drawRect(0, 0, width, height, gridColor);
 
-        float screenRatio = (tft.width() * 1.0f) / tft.height();
-        int dy = height / (12 * screenRatio);
-        int dx = width / 12;
-
-        // Horizontal lines
-        for (int i = 0; i < height; i += dy) {
-            b->drawLine(0, i, width, i, gridColor);
-        }
-        // Vertical lines
-        for (int i = 0; i < width; i += dx) {
-            b->drawLine(i, 0, i, height, gridColor);
+        // draw lanes lines
+        for (int i = 0; i < maxSensorLanes; i++) {
+            b->drawLine(0, i * laneHeight, width, i * laneHeight, gridColor);
         }
     }
 
     void drawSensorsData(unsigned long now = millis()) {
-        Serial.printf("Drawing sensors data at %lu\r\n", now);
         // Initialize the buffer
         TFT_eSprite* b = new TFT_eSprite(&tft);
         b->createSprite(width, height);
@@ -87,47 +78,44 @@ private:
         for (int sensor = 0; sensor < MAX_SENSOR; ++sensor) {
             auto data = SensorManager::getInstance()->getSeries(sensor);
             auto drawY = sensor * laneHeight;
+            auto pad = laneHeight / 4;
 
             if (data.empty()) {
-                b->drawLine(width, drawY + laneHeight / 2, 0,
-                            drawY + laneHeight / 2, TFT_RED);
+                b->drawLine(width, drawY - pad + laneHeight, 0,
+                            drawY - pad + laneHeight, TFT_RED);
                 continue;
             }
 
-            auto it = data.begin();
-            int curr_X = width;
-            int curr_dY = !(*it).getState() * (laneHeight / 2);
+            int last_X = width;
+            int last_state = !!data.front().getState();
 
-            while (it != data.end()) {
-                auto i = *it;
-                int msSinceNow = (now - i.getTimeStamp()) ;
+            for (auto sd : data) {
+                int msSinceNow = (now - sd.getTimeStamp());
 
-                int nextX = width - (msSinceNow / msPerPixel);
-                if (nextX < 0) {
-                    nextX = 0;
+                // Calculate the current X position based on time difference
+                int X = width - (msSinceNow / (msPerPixel * 1.0f));
+                if (X < 0) {
+                    X = 0;
                 }
+                int oldY = drawY + pad + (last_state * (laneHeight / 2));
+                int Y = drawY + pad + (!!sd.getState() * (laneHeight / 2));
 
-                // Draw line from current X to next X
-                b->drawLine(curr_X, drawY + curr_dY, nextX, drawY + curr_dY,
-                            TFT_WHITE);
-
-                // Update curr_dY based on the *current* data point
-                int next_dY = !i.getState() * (laneHeight / 2);
-
-                // Draw vertical line if dY changes
-                if (next_dY != curr_dY) {
-                    b->drawLine(nextX, drawY + curr_dY, nextX, drawY + next_dY,
-                                TFT_WHITE);
+                // draw line switch
+                if (oldY != Y) {
+                    b->drawLine(X, oldY, X, Y, TFT_WHITE);
+                    b->drawLine(last_X, oldY, last_X, Y, TFT_WHITE);
                 }
-                curr_X = nextX;
-                curr_dY = next_dY;
+                // Connect lines
+                b->drawLine(last_X, Y, X, Y, TFT_WHITE);
 
-                if (nextX == 0)
+                last_X = X;
+                last_state = !!sd.getState();
+
+                // Cull older data
+                if (X == 0)
                     break;
-
-                it++;
             }  // end of sensor
-         }  // end all sensors
+        }  // end all sensors
 
         b->pushSprite(x, y);  // Push sprite to display
         b->deleteSprite();

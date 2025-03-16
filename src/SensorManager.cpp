@@ -1,19 +1,27 @@
 #include "SensorManager.h"
 
-SensorData::SensorData(bool state, u_int32_t timeStamp) 
-    :state(state), timeStamp(timeStamp) {
+SensorData::SensorData(bool state, u_int32_t timeStamp)
+    : state(state), timeStamp(timeStamp) {
 }
 
-bool SensorData::getState() { 
-    return state; 
+bool SensorData::getState() {
+    return state;
 }
 
-u_int32_t SensorData::getTimeStamp()  { 
-    return timeStamp; 
-}  
+void SensorData::setState(bool s) {
+    state = s;
+}
 
-char* SensorData::toString(char* buffer) { 
-    sprintf(buffer, "State: %d, TimeStamp: %u", state, timeStamp);
+void SensorData::setTimeStamp(u_int32_t ts) {
+    timeStamp = ts;
+}
+
+u_int32_t SensorData::getTimeStamp() {
+    return timeStamp;
+}
+
+char* SensorData::toString(char* buffer, int size) {
+    snprintf(buffer, size, "State: %d, TimeStamp: %u", state, timeStamp);
     return buffer;
 }
 
@@ -25,7 +33,12 @@ void SensorSeries::add(SensorData data) {
     if (sensorDataList.size() >= MAX_SENSORDATA) {
         sensorDataList.pop_back();
     }
-    sensorDataList.push_front(data);
+    SensorData currentFront = sensorDataList.front();
+    if (currentFront.getState() == data.getState()) {
+        currentFront.setTimeStamp(data.getTimeStamp());
+    } else {
+        sensorDataList.push_front(data);
+    }
 }
 
 void SensorSeries::clear() {
@@ -38,9 +51,9 @@ std::list<SensorData> SensorSeries::getSeries() {
 
 SensorManager::SensorManager() {
     // Initialize the SensorManager with an empty list of SensorSeries
-}   
+}
 
-SensorManager *SensorManager::getInstance() {
+SensorManager* SensorManager::getInstance() {
     static SensorManager instance;
     return &instance;
 }
@@ -62,6 +75,6 @@ void SensorManager::reset() {
 std::list<SensorData> SensorManager::getSeries(int series) {
     if (series >= MAX_SENSOR || series < 0) {
         throw std::out_of_range("Invalid sensor series index");
-    }   
+    }
     return seriesList[series].getSeries();
 }

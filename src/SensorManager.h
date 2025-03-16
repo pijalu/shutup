@@ -17,10 +17,14 @@ private:
 
 public:
     SensorData(bool state = false, u_int32_t timeStamp = 0);
+
     bool getState();
+    void setState(bool s);
+
+    void setTimeStamp(u_int32_t ts);
     u_int32_t getTimeStamp();
 
-    char* toString(char* buffer);
+    char* toString(char* buffer, int size);
 };
 
 class SensorSeries {
@@ -40,7 +44,7 @@ private:
     SensorManager();
 
 public:
-    static SensorManager *getInstance();
+    static SensorManager* getInstance();
 
     // reset all states
     void reset();

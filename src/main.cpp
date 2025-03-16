@@ -29,7 +29,7 @@ void IRAM_ATTR isr_sensor_1() {
     sensor_1 = !sensor_1;
     auto data = SensorData(sensor_1, millis());
     SensorManager::getInstance()->addToSensorSeries(0, data);
-    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer));
+    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer, sizeof(buffer)));
 }
 
 void IRAM_ATTR isr_sensor_2() {
@@ -37,7 +37,7 @@ void IRAM_ATTR isr_sensor_2() {
     sensor_2 = !sensor_2;
     auto data = SensorData(sensor_2, millis());
     SensorManager::getInstance()->addToSensorSeries(1, data);
-    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer));
+    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer, sizeof(buffer)));
 }
 
 void IRAM_ATTR isr_sensor_3() {
@@ -45,7 +45,7 @@ void IRAM_ATTR isr_sensor_3() {
     sensor_3 = !sensor_3;
     auto data = SensorData(sensor_3, millis());
     SensorManager::getInstance()->addToSensorSeries(2, data);
-    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer));
+    Serial.printf("Sensor 1: %s\r\n", data.toString(buffer, sizeof(buffer)));
 }
 
 void setup() {
@@ -112,7 +112,10 @@ void setup() {
     }
     if (sensor_setup_error) {
         tft.printf("Warning: %d errors on sensor init\n", sensor_setup_error);
+
+#ifndef SIM
         delay(5000);
+#endif
         // Clear screen
         tft.fillScreen(TFT_BLACK);
     }
@@ -138,5 +141,6 @@ void loop() {
     tft.println("Ready to Rumble");  // println moves cursor down for a new line
 
     graph_display->update();
-    delay(1000);  // Delay between updates
+    yield();
+    delay(500);  // Delay between updates
 }
