@@ -8,7 +8,7 @@
 
 class GraphDisplay {
 private:
-    TFT_eSPI tft;  // TFT display object
+    TFT_eSPI* tft;  // TFT
 
     int x, y;           // Position of the graph on screen
     int width, height;  // Size of the graph area
@@ -26,7 +26,7 @@ private:
     u_int32_t lastUpdate = 0;  // last update time for the graph
 
 public:
-    GraphDisplay(TFT_eSPI tft_, int x_, int y_, int width_, int height_,
+    GraphDisplay(TFT_eSPI* tft_, int x_, int y_, int width_, int height_,
                  u_int32_t maxTime_)
         : tft(tft_),
           x(x_),
@@ -39,14 +39,6 @@ public:
           backgroundColor(TFT_BLACK),
           gridColor(TFT_DARKGREY),
           textColor(TFT_WHITE) {
-        init();
-    }
-
-    void init() {
-        tft.setTextColor(textColor, backgroundColor);
-        tft.setTextSize(1);
-
-        // setup graph prop
         timeWindowPixels = width;
         msPerPixel = maxTime / timeWindowPixels;
     }
@@ -56,6 +48,10 @@ public:
             lastUpdate = millis();
             refresh();
         }
+    }
+
+    void refresh() {
+        drawSensorsData();
     }
 
 private:
@@ -69,11 +65,14 @@ private:
     }
 
     void drawSensorsData(unsigned long now = millis()) {
-        // Initialize the buffer
-        TFT_eSprite* b = new TFT_eSprite(&tft);
-        b->createSprite(width, height);
-        b->fillSprite(TFT_BLACK);
-        drawGrid(b);
+        // Initialize the graph buffer
+        TFT_eSprite b = TFT_eSprite(tft);
+        b.setColorDepth(8);
+        b.setAttribute(PSRAM_ENABLE, false);  // goes on device ram
+
+        b.createSprite(width, height);
+        b.fillSprite(TFT_BLACK);
+        drawGrid(&b);
 
         for (int sensor = 0; sensor < MAX_SENSOR; ++sensor) {
             auto data = SensorManager::getInstance()->getSeries(sensor);
@@ -81,8 +80,8 @@ private:
             auto pad = laneHeight / 4;
 
             if (data.empty()) {
-                b->drawLine(width, drawY - pad + laneHeight, 0,
-                            drawY - pad + laneHeight, TFT_RED);
+                b.drawLine(width, drawY - pad + laneHeight, 0,
+                           drawY - pad + laneHeight, TFT_RED);
                 continue;
             }
 
@@ -102,11 +101,13 @@ private:
 
                 // draw line switch
                 if (oldY != Y) {
-                    b->drawLine(X, oldY, X, Y, TFT_WHITE);
-                    b->drawLine(last_X, oldY, last_X, Y, TFT_WHITE);
+                    if (X) {
+                        b.drawLine(X, oldY, X, Y, TFT_WHITE);
+                    }
+                    b.drawLine(last_X, oldY, last_X, Y, TFT_WHITE);
                 }
                 // Connect lines
-                b->drawLine(last_X, Y, X, Y, TFT_WHITE);
+                b.drawLine(last_X, Y, X, Y, TFT_WHITE);
 
                 last_X = X;
                 last_state = !!sd.getState();
@@ -117,12 +118,8 @@ private:
             }  // end of sensor
         }  // end all sensors
 
-        b->pushSprite(x, y);  // Push sprite to display
-        b->deleteSprite();
-    }
-
-    void refresh() {
-        drawSensorsData();
+        b.pushSprite(x, y);  // Push sprite to display
+        b.deleteSprite();
     }
 };
 

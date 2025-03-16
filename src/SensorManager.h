@@ -7,7 +7,7 @@
 #include <vector>
 
 #define MAX_SENSOR 3
-#define MAX_SENSORDATA 1000
+#define MAX_SENSORDATA 50
 
 // Store a state and associated timestamp for a sensor
 class SensorData {
@@ -41,10 +41,11 @@ private:
 class SensorManager {
 private:
     SensorSeries seriesList[MAX_SENSOR];
-    SensorManager();
 
 public:
     static SensorManager* getInstance();
+
+    SensorManager();
 
     // reset all states
     void reset();

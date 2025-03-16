@@ -1,11 +1,10 @@
-#include <Arduino.h>
-#include "FS.h"
-
-#include <TFT_eSPI.h>
-#include <lvgl.h> // LVGL graphics library
-
-#include "defs.h"
 #include "touch.h"
+
+#include <Arduino.h>
+#include <TFT_eSPI.h>
+
+#include "FS.h"
+#include "defs.h"
 #include "utils.h"
 
 #ifdef TOUCH_CAP
@@ -17,7 +16,7 @@ extern TFT_eSPI tft;
 
 void touchSetup() {
 #ifdef TOUCH_CAP
-    if (! ctp.begin(CAP_SENSITIVITY)) {  // pass in 'sensitivity' coefficient
+    if (!ctp.begin(CAP_SENSITIVITY)) {  // pass in 'sensitivity' coefficient
         halt("Couldn't start FT6206 touchscreen controller");
     }
 #else
@@ -27,62 +26,62 @@ void touchSetup() {
     tft.println("calibration run");
     // check file system
     if (!SPIFFS.begin()) {
-      Serial.println("formatting file system");
-  
-      if (!SPIFFS.format()) {
-        halt("Formatting failed !");
-      }
-  
-      Serial.println("formatted done...");
-  
-      if (!SPIFFS.begin()) {
-        halt("SPIFFS begin failed !");
-      }
+        Serial.println("formatting file system");
+
+        if (!SPIFFS.format()) {
+            halt("Formatting failed !");
+        }
+
+        Serial.println("formatted done...");
+
+        if (!SPIFFS.begin()) {
+            halt("SPIFFS begin failed !");
+        }
     }
-  
+
     // check if calibration file exists
     if (SPIFFS.exists(CALIBRATION_FILE)) {
-      File f = SPIFFS.open(CALIBRATION_FILE, "r");
-      if (f) {
-        if (f.readBytes((char *)calibrationData, 14) == 14)
-          calDataOK = 1;
-        f.close();
-      }
+        File f = SPIFFS.open(CALIBRATION_FILE, "r");
+        if (f) {
+            if (f.readBytes((char *)calibrationData, 14) == 14)
+                calDataOK = 1;
+            f.close();
+        }
     }
     if (calDataOK) {
-      // calibration data valid
-      tft.setTouch(calibrationData);
+        // calibration data valid
+        tft.setTouch(calibrationData);
     } else {
-      // data not valid. recalibrate
-      tft.calibrateTouch(calibrationData, TFT_WHITE, TFT_RED, 15);
-      // store data
-      File f = SPIFFS.open(CALIBRATION_FILE, "w");
-      if (f) {
-        f.write((const unsigned char *)calibrationData, 14);
-        f.close();
-      }
+        // data not valid. recalibrate
+        tft.calibrateTouch(calibrationData, TFT_WHITE, TFT_RED, 15);
+        // store data
+        File f = SPIFFS.open(CALIBRATION_FILE, "w");
+        if (f) {
+            f.write((const unsigned char *)calibrationData, 14);
+            f.close();
+        }
     }
-    #endif
+#endif
 }
 
 bool getTouch(uint16_t *x, uint16_t *y, uint16_t *z) {
 #ifdef TOUCH_CAP
-    if (! ctp.touched()) {
+    if (!ctp.touched()) {
         return false;
     }
     TS_Point p = ctp.getPoint();
 
     p.x = map(p.x, 0, TFT_WIDTH, TFT_WIDTH, 0);
     p.y = map(p.y, 0, TFT_HEIGHT, TFT_HEIGHT, 0);
-    
+
     *x = p.x;
     *y = p.y;
     *z = p.z;
 #else
-    if (! tft.getTouch(x, y)) {
-      return false;
+    if (!tft.getTouch(x, y)) {
+        return false;
     }
-    *z=1;
+    *z = 1;
 #endif
     return true;
 }
