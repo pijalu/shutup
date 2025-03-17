@@ -1,0 +1,196 @@
+// gui_manager.h
+#ifndef GUI_MANAGER_H
+#define GUI_MANAGER_H
+
+#include <Arduino.h>
+#include <TFT_eSPI.h>
+
+#include <algorithm>   // For std::find_if
+#include <cstdio>      // For printf and similar functions
+#include <functional>  // For std::function
+#include <memory>      // For smart pointers
+#include <vector>
+
+// Rect helper
+class Rect {
+public:
+    int x_, y_, width_, height_;
+    Rect(int x, int y, int width, int height)
+        : x_(x), y_(y), width_(width), height_(height) {
+    }
+    bool contains(int x, int y) const {
+        return x >= x_ && x <= x_ + width_ && y >= y_ && y <= y_ + height_;
+    }
+
+    int x() const {
+        return x_;
+    }
+    int y() const {
+        return y_;
+    }
+    int width() const {
+        return width_;
+    }
+    int height() const {
+        return height_;
+    }
+};
+
+// Forward declaration
+class Component;
+
+// Component base class
+class Component {
+public:
+    Component(int x, int y, int width, int height) : r(x, y, width, height) {
+    }
+
+    virtual ~Component() {
+    }
+
+    virtual void render() {
+        onRender();
+        for (Component* child : getChildren()) {
+            child->render();
+        }
+    }
+
+    virtual void onRender() = 0;
+
+    bool click(int x, int y) {
+        if (x >= r.x() && x < r.x() + r.width() && y >= r.y() &&
+            y < r.y() + r.height()) {
+            for (Component* child : getChildren()) {
+                if (child->click(x, y)) {
+                    return true;
+                }
+            }
+            return onClick(x, y);
+        }
+        return false;
+    }
+
+    virtual bool onClick(
+        int x, int y) = 0;  // Executes click action, returns true if handled
+
+    int getX() const {
+        return r.x();
+    }
+    int getY() const {
+        return r.y();
+    }
+    int getWidth() const {
+        return r.width();
+    }
+    int getHeight() const {
+        return r.height();
+    }
+    Component* getParent() const {
+        return parent_;
+    }
+
+    Component* add(Component* child) {
+        children_.push_back(child);
+        child->parent_ = this;
+        return this;
+    }
+
+    Component* remove(Component* child) {
+        auto it =
+            std::find_if(children_.begin(), children_.end(),
+                         [child](const Component* c) { return c == child; });
+        if (it != children_.end()) {
+            children_.erase(it);
+            delete child;
+        }
+        return this;
+    }
+
+    std::vector<Component*> getChildren() {
+        return children_;
+    }
+
+private:
+    Rect r;
+    Component* parent_ = nullptr;  // Parent component
+    std::vector<Component*> children_;
+};
+
+// Page Class
+class Page : public Component {
+public:
+    Page(const std::string& name, int x, int y, int width, int height)
+        : Component(x, y, width, height), name_(name) {
+    }
+    ~Page() override {
+        for (auto& component : getChildren()) {
+            delete component;
+        }
+    }
+
+    void onRender() override {
+    }
+
+    bool onClick(int x, int y) override {
+        return false;
+    }
+
+    const std::string& getName() const {
+        return name_;
+    }
+
+private:
+    std::string name_;
+};
+
+// UI Class
+class UI {
+public:
+    UI() {
+    }
+    ~UI() {
+        for (auto& page : pages_) {
+            delete page;
+        }
+    }
+
+    UI* addPage(Page* page) {
+        pages_.push_back(page);
+        return this;
+    }
+
+    UI* removePage(Page* page) {
+        auto it = std::find_if(pages_.begin(), pages_.end(),
+                               [page](const Page* p) { return p == page; });
+        if (it != pages_.end()) {
+            pages_.erase(it);
+            delete page;
+        }
+        return this;
+    }
+
+    UI* setActivePage(int page) {
+        if (page < 0 || page >= pages_.size())
+            throw std::out_of_range("Invalid page index");
+        active_page_ = pages_[page];
+        return this;
+    }
+
+    void render() {
+        if (active_page_) {
+            active_page_->render();
+        }
+    }
+
+    bool click(int x, int y) {
+        if (!active_page_)
+            return false;
+        return active_page_->click(x, y);
+    }
+
+private:
+    std::vector<Page*> pages_;
+    Page* active_page_ = nullptr;
+};
+
+#endif  // GUI_MANAGER_H

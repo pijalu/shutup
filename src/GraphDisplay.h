@@ -5,13 +5,11 @@
 #include <TFT_eSPI.h>
 
 #include "SensorManager.h"
+#include "gui_manager.h"
+#include "utils.h"
 
-class GraphDisplay {
+class GraphDisplay : public Component {
 private:
-    TFT_eSPI* tft;  // TFT
-
-    int x, y;           // Position of the graph on screen
-    int width, height;  // Size of the graph area
     u_int64_t maxTime;  // time in MS to show on the graph
     uint16_t backgroundColor, gridColor, textColor;
 
@@ -19,57 +17,51 @@ private:
     u_int8_t maxSensorLanes;  // Number of sensors to display
 
     // Grid settings
-    u_int16_t timeWindowPixels;  // Time window in pixels
-    u_int16_t msPerPixel;        // Milliseconds per pixel
-    u_int16_t laneHeight;        // Height of each sensor lane
+    u_int16_t msPerPixel;  // Milliseconds per pixel
+    u_int16_t laneHeight;  // Height of each sensor lane
 
     u_int32_t lastUpdate = 0;  // last update time for the graph
 
 public:
-    GraphDisplay(TFT_eSPI* tft_, int x_, int y_, int width_, int height_,
-                 u_int32_t maxTime_)
-        : tft(tft_),
-          x(x_),
-          y(y_),
-          width(width_),
-          height(height_),
+    GraphDisplay(int x_, int y_, int width_, int height_, u_int32_t maxTime_)
+        : Component(x_, y_, width_, height_),
           maxSensorLanes(3),
           laneHeight(height_ / maxSensorLanes),
           maxTime(maxTime_),
           backgroundColor(TFT_BLACK),
           gridColor(TFT_DARKGREY),
           textColor(TFT_WHITE) {
-        timeWindowPixels = width;
-        msPerPixel = maxTime / timeWindowPixels;
+        msPerPixel = maxTime / getWidth();
     }
 
-    void update() {
+    bool onClick(int x, int y) {
+        return false;
+    }
+
+    void onRender() {
         if (millis() - lastUpdate > 100) {  // Update every 100ms
             lastUpdate = millis();
-            refresh();
+            drawSensorsData();
         }
-    }
-
-    void refresh() {
-        drawSensorsData();
     }
 
 private:
     void drawGrid(TFT_eSprite* b) {
-        b->drawRect(0, 0, width, height, gridColor);
+        b->drawRect(0, 0, getWidth(), getHeight(), gridColor);
 
         // draw lanes lines
         for (int i = 0; i < maxSensorLanes; i++) {
-            b->drawLine(0, i * laneHeight, width, i * laneHeight, gridColor);
+            b->drawLine(0, i * laneHeight, getWidth(), i * laneHeight,
+                        gridColor);
         }
     }
 
     void drawSensorsData(unsigned long now = millis()) {
         // Initialize the graph buffer
-        TFT_eSprite b = TFT_eSprite(tft);
+        TFT_eSprite b = TFT_eSprite(getTft());
         b.setColorDepth(4);  // 4 colors
 
-        b.createSprite(width, height);
+        b.createSprite(getWidth(), getHeight());
         b.fillSprite(TFT_BLACK);
         drawGrid(&b);
 
@@ -79,19 +71,19 @@ private:
             auto pad = laneHeight / 4;
 
             if (data.empty()) {
-                b.drawLine(width, drawY - pad + laneHeight, 0,
+                b.drawLine(getWidth(), drawY - pad + laneHeight, 0,
                            drawY - pad + laneHeight, TFT_RED);
                 continue;
             }
 
-            int last_X = width;
+            int last_X = getWidth();
             int last_state = !!data.front().getState();
 
             for (auto sd : data) {
                 int msSinceNow = (now - sd.getTimeStamp());
 
                 // Calculate the current X position based on time difference
-                int X = width - (msSinceNow / (msPerPixel * 1.0f));
+                int X = getWidth() - (msSinceNow / (msPerPixel * 1.0f));
                 if (X < 0) {
                     X = 0;
                 }
@@ -120,7 +112,7 @@ private:
             }
         }  // end all sensors
 
-        b.pushSprite(x, y);  // Push sprite to display
+        b.pushSprite(getX(), getY());  // Push sprite to display
         b.deleteSprite();
     }
 };

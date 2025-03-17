@@ -98,7 +98,7 @@ void loop() {
     {
         static int lastUpdate = 0;
         static int sensor = 0;
-        if (millis() - lastUpdate > 100) {  // sim change of state every 500ms
+        if (millis() - lastUpdate > 500) {  // sim change of state every 500ms
             lastUpdate = millis();
             switch (sensor) {
                 case 0:

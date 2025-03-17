@@ -7,6 +7,18 @@
 #include "defs.h"
 #include "utils.h"
 
+#ifdef TOUCH_DEBOUNCE
+
+#ifndef TOUCH_THRESHOLD
+#define TOUCH_THRESHOLD 5
+#endif
+
+#ifndef TOUCH_DEBOUNCE_MS
+#define TOUCH_DEBOUNCE_MS 500
+#endif
+
+#endif
+
 #ifdef TOUCH_CAP
 #include <Adafruit_FT6206.h>
 Adafruit_FT6206 ctp = Adafruit_FT6206();
@@ -65,8 +77,16 @@ void touchSetup() {
 }
 
 bool getTouch(uint16_t *x, uint16_t *y, uint16_t *z) {
+#ifdef TOUCH_DEBOUNCE
+    static uint16_t lastX = 0;
+    static uint16_t lastY = 0;
+    static unsigned long lastTouchTime = 0;
+    static const unsigned long debounceDelay = TOUCH_DEBOUNCE_MS;  // ms
+#endif
+
 #ifdef TOUCH_CAP
     if (!ctp.touched()) {
+        lastTouchTime = 0;  // reset
         return false;
     }
     TS_Point p = ctp.getPoint();
@@ -79,9 +99,27 @@ bool getTouch(uint16_t *x, uint16_t *y, uint16_t *z) {
     *z = p.z;
 #else
     if (!tft.getTouch(x, y)) {
+        lastTouchTime = 0;  // reset
         return false;
     }
     *z = 1;
 #endif
+
+#ifdef TOUCH_DEBOUNCE
+    // Debounce logic: Check if the touch location has changed significantly
+    if (abs(p.x - lastX) > TOUCH_THRESHOLD ||
+        abs(p.y - lastY) > TOUCH_THRESHOLD) {  // Adjust threshold as needed
+        lastX = p.x;
+        lastY = p.y;
+    }
+    // If the touch location hasn't changed significantly, check debounce
+    // time
+    if (millis() - lastTouchTime < debounceDelay) {
+        log_d("Touch debounced: (%d, %d) [last: %d]", p.x, p.y, lastTouchTime);
+        return false;  // Ignore the touch if it's within the debounce delay
+    }
+    lastTouchTime = millis();  // Record the time of the new touch
+#endif
+
     return true;
 }
