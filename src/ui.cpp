@@ -14,14 +14,7 @@
 #define TARGET_FPS 10
 #define MIN_FPS 5
 
-class GUI : public UI {
-public:
-    GUI() : UI() {
-    }
-};
-
 GraphDisplay* graph_display;
-GUI* gui = nullptr;
 
 class UIPage : public Page {
 public:
@@ -32,6 +25,13 @@ public:
     }
 };
 
+void ui_fullredraw() {
+    // Clear the screen
+    // getTft()->fillScreen(TFT_DARKGREY);
+    getTft()->fillRect(0, 20, getTft()->width(), getTft()->height() - 20,
+                       TFT_DARKGREY);
+}
+
 void ui_setup() {
     log_i("Starting tft system");
     TFT_eSPI* tft = new TFT_eSPI(TFT_WIDTH, TFT_HEIGHT);
@@ -39,25 +39,23 @@ void ui_setup() {
 
     tft->init();
     tft->setRotation(0);
-    tft->fillScreen(TFT_DARKGREY);
 
     // Initialize touch screen
     log_i("Starting touch system");
     touchSetup();
 
     log_i("Starting UI management");
-    gui = new GUI();
-
     Page* sensors_page = new UIPage("Sensors");
     sensors_page->add(new GraphDisplay(10, getTft()->height() - 75,
                                        getTft()->width() - 20, 50, 10000));
 
-    gui->addPage(sensors_page);
+    UI::getInstance()->addPage(sensors_page);
 
-    gui->addPage(new UIPage("Settings"));
-    gui->addPage(new UIPage("About"));
+    UI::getInstance()->addPage(new UIPage("Settings"));
+    UI::getInstance()->addPage(new UIPage("About"));
 
-    gui->setActivePage(0);  // Sensors page
+    UI::getInstance()->setActivePage(0);  // Sensors page
+    UI::getInstance()->redrawCallback(ui_fullredraw);
 
     // done
     log_i("ui setup complete");
@@ -69,11 +67,10 @@ void ui_loop() {
 
     int start = millis();
 
-    gui->render();
+    UI::getInstance()->render();
     u_int16_t x, y, z;
     if (getTouch(&x, &y, &z)) {
-        log_i("touch at (%d, %d @ %d)", x, y, z);
-        gui->click(x, y);
+        UI::getInstance()->click(x, y);
     }
     yield();
 

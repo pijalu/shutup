@@ -16,11 +16,11 @@ private:
     Button btn2 = Button(">", getWidth() - 18, 0, 18, getHeight());
 
     bool btn1Clicked(int x, int y) {
-        log_i("Btn1 clicked");
+        UI::getInstance()->prevPage();
         return true;
     }
     bool btn2Clicked(int x, int y) {
-        log_i("Btn2 clicked");
+        UI::getInstance()->nextPage();
         return true;
     }
 
@@ -36,9 +36,9 @@ public:
     }
 
     bool onClick(int x, int y) override {
-        if (btn1.click(x, y))
+        if (btn1.contains(x, y))
             return btn1Clicked(x, y);
-        if (btn2.click(x, y))
+        if (btn2.contains(x, y))
             return btn2Clicked(x, y);
         return false;
     }

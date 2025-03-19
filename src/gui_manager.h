@@ -2,9 +2,6 @@
 #ifndef GUI_MANAGER_H
 #define GUI_MANAGER_H
 
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-
 #include <algorithm>   // For std::find_if
 #include <cstdio>      // For printf and similar functions
 #include <functional>  // For std::function
@@ -55,11 +52,14 @@ public:
         }
     }
 
+    bool contains(int x, int y) const {
+        return r.contains(x, y);
+    }
+
     virtual void onRender() = 0;
 
     bool click(int x, int y) {
-        if (x >= r.x() && x < r.x() + r.width() && y >= r.y() &&
-            y < r.y() + r.height()) {
+        if (contains(x, y)) {
             for (Component* child : getChildren()) {
                 if (child->click(x, y)) {
                     return true;
@@ -146,12 +146,9 @@ private:
 // UI Class
 class UI {
 public:
-    UI() {
-    }
-    ~UI() {
-        for (auto& page : pages_) {
-            delete page;
-        }
+    static UI* getInstance() {
+        static UI instance;
+        return &instance;
     }
 
     UI* addPage(Page* page) {
@@ -159,38 +156,67 @@ public:
         return this;
     }
 
-    UI* removePage(Page* page) {
-        auto it = std::find_if(pages_.begin(), pages_.end(),
-                               [page](const Page* p) { return p == page; });
-        if (it != pages_.end()) {
-            pages_.erase(it);
-            delete page;
-        }
-        return this;
+    void nextPage() {
+        active_page_ = (active_page_ + 1) % pages_.size();
+        redraw = true;
+    }
+
+    void prevPage() {
+        active_page_ = (active_page_ - 1 + pages_.size()) % pages_.size();
+        redraw = true;
+    }
+
+    int getActivePage() const {
+        return active_page_;
     }
 
     UI* setActivePage(int page) {
         if (page < 0 || page >= pages_.size())
             throw std::out_of_range("Invalid page index");
-        active_page_ = pages_[page];
+
+        active_page_ = page;
+        redraw = true;
         return this;
     }
 
     void render() {
-        if (active_page_) {
-            active_page_->render();
+        // must fully redraw the screen before rendering any pages
+        if (redraw) {
+            redraw = false;
+            if (redrawCallback_ != nullptr) {
+                redrawCallback_();
+            }
+        }
+
+        if (active_page_ >= 0 && active_page_ < pages_.size()) {
+            pages_[active_page_]->render();
         }
     }
 
     bool click(int x, int y) {
-        if (!active_page_)
-            return false;
-        return active_page_->click(x, y);
+        if (active_page_ >= 0 && active_page_ < pages_.size())
+            return pages_[active_page_]->click(x, y);
+        return false;
+    }
+
+    void redrawCallback(void (*callback)()) {
+        redrawCallback_ = callback;
     }
 
 private:
+    void (*redrawCallback_)() = nullptr;
+
+    UI() {
+    }
+
+    ~UI() {
+        for (auto& page : pages_) {
+            delete page;
+        }
+    }
     std::vector<Page*> pages_;
-    Page* active_page_ = nullptr;
+    int active_page_ = -1;
+    bool redraw = false;
 };
 
 #endif  // GUI_MANAGER_H
