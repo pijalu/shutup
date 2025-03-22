@@ -52,6 +52,17 @@ public:
         }
     }
 
+    virtual void hide() {
+        for (Component* child : getChildren()) {
+            child->hide();
+        }
+        onHide();
+    }
+
+    virtual void onHide() {
+        setHiddenFlag(true);
+    }
+
     bool contains(int x, int y) const {
         return r.contains(x, y);
     }
@@ -110,10 +121,21 @@ public:
         return children_;
     }
 
+    bool getHiddenFlag() const {
+        return hiddenFlag;
+    }
+
+    void setHiddenFlag(bool hidden) {
+        hiddenFlag = hidden;
+    }
+
 private:
     Rect r;
     Component* parent_ = nullptr;  // Parent component
     std::vector<Component*> children_;
+
+    // set when the component was hidden
+    bool hiddenFlag = true;
 };
 
 // Page Class
@@ -157,11 +179,16 @@ public:
     }
 
     void nextPage() {
+        if (active_page_ != -1)
+            pages_[active_page_]->hide();
         active_page_ = (active_page_ + 1) % pages_.size();
         redraw = true;
     }
 
     void prevPage() {
+        if (active_page_ != -1)
+            pages_[active_page_]->hide();
+
         active_page_ = (active_page_ - 1 + pages_.size()) % pages_.size();
         redraw = true;
     }
@@ -173,6 +200,9 @@ public:
     UI* setActivePage(int page) {
         if (page < 0 || page >= pages_.size())
             throw std::out_of_range("Invalid page index");
+
+        if (active_page_ != -1)
+            pages_[active_page_]->hide();
 
         active_page_ = page;
         redraw = true;

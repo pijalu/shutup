@@ -5,6 +5,7 @@
 #include <list>
 
 #include "SensorManager.h"
+#include "config.h"
 #include "defs.h"
 #include "touch.h"
 #include "ui.h"
@@ -45,6 +46,9 @@ void setup() {
     Serial.begin(115200);
     Serial.println("Starting up");
 
+    init_fs();
+
+    init_config();  // set default config
     ui_setup();
 
     pinMode(LASERS_PIN, OUTPUT);
@@ -52,9 +56,9 @@ void setup() {
     pinMode(SENSOR_2_PIN, INPUT);
     pinMode(SENSOR_3_PIN, INPUT);
 
-    sensor_1 = !digitalRead(SENSOR_1_PIN);
-    sensor_2 = !digitalRead(SENSOR_2_PIN);
-    sensor_3 = !digitalRead(SENSOR_3_PIN);
+    sensor_1 = read_sensor(SENSOR_1_PIN);
+    sensor_2 = read_sensor(SENSOR_2_PIN);
+    sensor_3 = read_sensor(SENSOR_3_PIN);
     log_d("Sensor initial status: s1: %d - s2: %d - s3: %d\r\n", sensor_1,
           sensor_2, sensor_3);
 
@@ -68,9 +72,9 @@ void setup() {
     digitalWrite(12, HIGH);
     delay(1);
 
-    sensor_1 = !digitalRead(SENSOR_1_PIN);
-    sensor_2 = !digitalRead(SENSOR_2_PIN);
-    sensor_3 = !digitalRead(SENSOR_3_PIN);
+    sensor_1 = read_sensor(SENSOR_1_PIN);
+    sensor_2 = read_sensor(SENSOR_2_PIN);
+    sensor_3 = read_sensor(SENSOR_3_PIN);
 
     log_d("Sensor post lasers status: s1: %d - s2: %d - s3: %d\r\n", sensor_1,
           sensor_2, sensor_3);

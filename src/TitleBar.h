@@ -44,6 +44,14 @@ public:
     }
 
     void onRender() {
+        /*
+        if (!getHiddenFlag()) {
+            // We don't need to redraw we were redrawn since it was hidden
+            return;
+        }
+        setHiddenFlag(false);
+        */
+
         TFT_eSprite spr(getTft());
         spr.setColorDepth(8);  // 4 colors
         spr.createSprite(getWidth(), getHeight());

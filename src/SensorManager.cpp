@@ -1,14 +1,14 @@
 #include "SensorManager.h"
 
-SensorData::SensorData(bool state, u_int32_t timeStamp)
+SensorData::SensorData(int state, u_int32_t timeStamp)
     : state(state), timeStamp(timeStamp) {
 }
 
-bool SensorData::getState() {
+int SensorData::getState() {
     return state;
 }
 
-void SensorData::setState(bool s) {
+void SensorData::setState(int s) {
     state = s;
 }
 

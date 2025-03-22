@@ -36,21 +36,7 @@ void touchSetup() {
     uint8_t calDataOK = 0;
 
     tft.println("calibration run");
-    // check file system
-    if (!SPIFFS.begin()) {
-        Serial.println("formatting file system");
-
-        if (!SPIFFS.format()) {
-            halt("Formatting failed !");
-        }
-
-        Serial.println("formatted done...");
-
-        if (!SPIFFS.begin()) {
-            halt("SPIFFS begin failed !");
-        }
-    }
-
+#ifndef SIM
     // check if calibration file exists
     if (SPIFFS.exists(CALIBRATION_FILE)) {
         File f = SPIFFS.open(CALIBRATION_FILE, "r");
@@ -60,18 +46,21 @@ void touchSetup() {
             f.close();
         }
     }
+#endif
     if (calDataOK) {
         // calibration data valid
         tft.setTouch(calibrationData);
     } else {
         // data not valid. recalibrate
         tft.calibrateTouch(calibrationData, TFT_WHITE, TFT_RED, 15);
+#ifndef SIM
         // store data
         File f = SPIFFS.open(CALIBRATION_FILE, "w");
         if (f) {
             f.write((const unsigned char *)calibrationData, 14);
             f.close();
         }
+#endif
     }
 #endif
 }

@@ -6,20 +6,19 @@
 #include <stdexcept>
 #include <vector>
 
-#define MAX_SENSOR 3
-#define MAX_SENSORDATA 50
+#include "defs.h"
 
 // Store a state and associated timestamp for a sensor
 class SensorData {
 private:
-    bool state;
+    int state;
     u_int32_t timeStamp;
 
 public:
-    SensorData(bool state = false, u_int32_t timeStamp = 0);
+    SensorData(int state = SENSOR_CLOSED, u_int32_t timeStamp = 0);
 
-    bool getState();
-    void setState(bool s);
+    int getState();
+    void setState(int s);
 
     void setTimeStamp(u_int32_t ts);
     u_int32_t getTimeStamp();

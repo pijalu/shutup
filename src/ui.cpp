@@ -3,9 +3,9 @@
 #include <Arduino.h>
 #include <TFT_eSPI.h>
 
+#include "AboutPage.h"
 #include "GraphDisplay.h"
-#include "StatusBar.h"
-#include "TitleBar.h"
+#include "UIPage.h"
 #include "gui_manager.h"
 #include "touch.h"
 #include "ui.h"
@@ -15,15 +15,6 @@
 #define MIN_FPS 5
 
 GraphDisplay* graph_display;
-
-class UIPage : public Page {
-public:
-    UIPage(const char* title)
-        : Page(title, 0, 0, getTft()->width(), getTft()->height()) {
-        add(new StatusBar(0, getTft()->height() - 20, getTft()->width(), 20));
-        add(new TitleBar(title, 0, 0, getTft()->width(), 20));
-    }
-};
 
 void ui_fullredraw() {
     // Clear the screen
@@ -52,7 +43,7 @@ void ui_setup() {
     UI::getInstance()->addPage(sensors_page);
 
     UI::getInstance()->addPage(new UIPage("Settings"));
-    UI::getInstance()->addPage(new UIPage("About"));
+    UI::getInstance()->addPage(new AboutPage());
 
     UI::getInstance()->setActivePage(0);  // Sensors page
     UI::getInstance()->redrawCallback(ui_fullredraw);
