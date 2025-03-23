@@ -20,8 +20,9 @@ public:
         int y = 0;
 
         TFT_eSPI* tft = getTft();
+        Rect r = getDrawRect();
+        tft->fillRect(r.x(), r.y(), r.width(), r.height(), TFT_DARKGREY);
 
-        tft->fillScreen(TFT_DARKGREY);
         tft->setTextColor(TFT_WHITE);
         tft->setTextFont(2);
         tft->setTextDatum(TC_DATUM);

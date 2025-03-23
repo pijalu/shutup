@@ -15,7 +15,7 @@ private:
     u_int32_t timeStamp;
 
 public:
-    SensorData(int state = SENSOR_CLOSED, u_int32_t timeStamp = 0);
+    SensorData(int state = SENSOR_BLOCKED, u_int32_t timeStamp = 0);
 
     int getState();
     void setState(int s);

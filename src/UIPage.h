@@ -14,6 +14,10 @@ public:
         add(new StatusBar(0, getTft()->height() - 20, getTft()->width(), 20));
         add(new TitleBar(title, 0, 0, getTft()->width(), 20));
     }
+
+    Rect getDrawRect() const {
+        return Rect(getX(), getY() + 20, getWidth(), getHeight() - 20);
+    }
 };
 
 #endif  // UI_PAGE_H

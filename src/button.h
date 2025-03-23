@@ -30,8 +30,7 @@ public:
 
     // render on an existing sprite
     void onRender(TFT_eSprite& spr) {
-        
-        spr.fillRect(getX(), getY(), getWidth(), getHeight(), backgroundColor);
+                spr.fillRect(getX(), getY(), getWidth(), getHeight(), backgroundColor);
         spr.drawRect(getX(), getY(), getWidth(), getHeight(), borderColor);
 
         spr.setTextFont(1);  // Use GLCD font

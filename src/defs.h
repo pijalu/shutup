@@ -2,8 +2,8 @@
 #define DEFS_H
 
 // Sensor related
-#define SENSOR_OPEN 1
-#define SENSOR_CLOSED 0
+#define SENSOR_UNBLOCKED 1
+#define SENSOR_BLOCKED 0
 
 // number of sensors
 #define MAX_SENSOR 3

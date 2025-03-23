@@ -27,25 +27,31 @@ void init_fs() {
 void init_config() {
     // Set default configuration
     std::map<std::string, std::string> defaults;
-    defaults[SENSOR_CLOSE_LEVEL] = "0";  // What the sensor return when closed
+    defaults[SENSOR_BLOCKED_LEVEL] = "0";  // What the sensor return when closed
+    defaults[S1S2_DISTANCE] =
+        "16";  // What is the distance between S1 and S2 in mm
+    defaults[S2S3_DISTANCE] =
+        "16";  // What is the distance between S2 and S3 in mm
 
     // Load default
     ConfigManager::getInstance().setDefaultConfig(defaults);
+    log_d("Loaded default config");
     ConfigManager::getInstance().load();
+    log_d("Loaded config");
 }
 
 int read_sensor(int pin) {
-    static int sensor_config_close_level = -1;
-    if (sensor_config_close_level == -1) {
-        sensor_config_close_level =
-            ConfigManager::getInstance().getInt(SENSOR_CLOSE_LEVEL, 0);
+    static int sensor_config_blocked_level = -1;
+    if (sensor_config_blocked_level == -1) {
+        sensor_config_blocked_level =
+            ConfigManager::getInstance().getInt(SENSOR_BLOCKED_LEVEL, 0);
     }
 
     int sensor_value = digitalRead(pin);
-    if (sensor_value == sensor_config_close_level) {
-        return SENSOR_CLOSED;  // Sensor is closed
+    if (sensor_value == sensor_config_blocked_level) {
+        return SENSOR_BLOCKED;  // Sensor is closed
     } else {
-        return SENSOR_OPEN;
+        return SENSOR_UNBLOCKED;
     }
 }
 

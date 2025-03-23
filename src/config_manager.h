@@ -15,16 +15,17 @@
 #include "utils.h"
 
 #define CONFIG_FILE "/config.txt"
-#define SENSOR_CLOSE_LEVEL "sensor_close_level"
+#define SENSOR_BLOCKED_LEVEL "sensor_blocked_level"
+#define S1S2_DISTANCE "s1s2_distance"
+#define S2S3_DISTANCE "s2s3_distance"
 
 class ConfigManager {
 private:
     std::map<std::string, std::string> config_;
-    std::map<std::string, std::string> default_config_;  // Default values
     bool updated_;  // Flag to indicate if the configuration has been updated
 
     // Private constructor to prevent direct instantiation
-    ConfigManager() : config_(), default_config_(), updated_(false) {
+    ConfigManager() : config_(), updated_(false) {
     }
 
 public:
@@ -36,7 +37,9 @@ public:
 
     // Set default configuration values
     void setDefaultConfig(const std::map<std::string, std::string>& defaults) {
-        default_config_ = defaults;
+        for (const auto& pair : defaults) {
+            config_[pair.first] = pair.second;
+        }
         log_d("Default configuration set.");
     }
 
@@ -119,6 +122,8 @@ public:
     int getInt(const std::string& key, int defaultValue) {
         auto it = config_.find(key);
         if (it != config_.end()) {
+            log_d("Config: Key '%s' exists with value '%s'.\n", key.c_str(),
+                  it->second.c_str());
             try {
                 return std::stoi(it->second);
             } catch (const std::invalid_argument& e) {
@@ -173,6 +178,7 @@ public:
 
     // Set value as string and update the updated flag
     void setString(const std::string& key, const std::string& value) {
+        log_d("Config: Setting %s to %s", key.c_str(), value.c_str());
         config_[key] = value;
         updated_ = true;
     }

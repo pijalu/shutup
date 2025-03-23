@@ -5,6 +5,7 @@
 
 #include "AboutPage.h"
 #include "GraphDisplay.h"
+#include "SettingsPage.h"
 #include "UIPage.h"
 #include "gui_manager.h"
 #include "touch.h"
@@ -42,10 +43,10 @@ void ui_setup() {
 
     UI::getInstance()->addPage(sensors_page);
 
-    UI::getInstance()->addPage(new UIPage("Settings"));
+    UI::getInstance()->addPage(new SettingsPage());
     UI::getInstance()->addPage(new AboutPage());
 
-    UI::getInstance()->setActivePage(0);  // Sensors page
+    UI::getInstance()->setActivePage(1);  // Sensors page
     UI::getInstance()->redrawCallback(ui_fullredraw);
 
     // done

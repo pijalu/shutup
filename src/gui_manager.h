@@ -36,8 +36,18 @@ public:
 // Forward declaration
 class Component;
 
+#define EVT_CLICK 100
+#define EVT_NOTIFY 101
+
+class Handler {
+public:
+    virtual void handle(Component* src, int evtCode, u_int32_t hparam,
+                        u_int32_t lparam) {
+    }
+};
+
 // Component base class
-class Component {
+class Component : public Handler {
 public:
     Component(int x, int y, int width, int height) : r(x, y, width, height) {
     }
@@ -56,11 +66,11 @@ public:
         for (Component* child : getChildren()) {
             child->hide();
         }
+        setHiddenFlag(true);
         onHide();
     }
 
     virtual void onHide() {
-        setHiddenFlag(true);
     }
 
     bool contains(int x, int y) const {
@@ -76,6 +86,7 @@ public:
                     return true;
                 }
             }
+            notifyHandlers(EVT_CLICK, x, y);
             return onClick(x, y);
         }
         return false;
@@ -129,10 +140,21 @@ public:
         hiddenFlag = hidden;
     }
 
+    void addHandler(Handler* handler) {
+        handlers.push_back(handler);
+    }
+
+    void notifyHandlers(int evtCode, u_int32_t hparam, u_int32_t lparam) {
+        for (auto& handler : handlers) {
+            handler->handle(this, evtCode, hparam, lparam);
+        }
+    }
+
 private:
     Rect r;
     Component* parent_ = nullptr;  // Parent component
     std::vector<Component*> children_;
+    std::list<Handler*> handlers;
 
     // set when the component was hidden
     bool hiddenFlag = true;
