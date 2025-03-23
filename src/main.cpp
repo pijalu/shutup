@@ -84,6 +84,12 @@ void setup() {
         sensor_setup_error++;
     }
 
+    // Set current status
+    SensorManager::getInstance()->addToSensorSeries(0, sensor_1);
+    SensorManager::getInstance()->addToSensorSeries(1, sensor_2);
+    SensorManager::getInstance()->addToSensorSeries(2, sensor_3);
+
+    // Attach to ISR
     attachInterrupt(digitalPinToInterrupt(SENSOR_1_PIN), isr_sensor_1, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SENSOR_2_PIN), isr_sensor_2, CHANGE);
     attachInterrupt(digitalPinToInterrupt(SENSOR_3_PIN), isr_sensor_3, CHANGE);
@@ -100,6 +106,7 @@ void loop() {
     ui_loop();
 #ifdef SIM
     {
+        // return;
         static int lastUpdate = 0;
         static int sensor = 0;
         if (millis() - lastUpdate > 500) {  // sim change of state every 500ms

@@ -79,7 +79,7 @@ std::list<SensorData> SensorManager::getSeries(int series) {
     return seriesList[series].getSeries();
 }
 
-bool SensorManager::getCurrentStatus(int series) {
+int SensorManager::getCurrentStatus(int series) {
     if (series >= MAX_SENSOR || series < 0) {
         throw std::out_of_range("Invalid sensor series index");
     }

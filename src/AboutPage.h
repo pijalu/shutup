@@ -33,6 +33,20 @@ public:
         tft->drawString(
             utl_sprintf("Build Date: %s - %s", BUILD_DATE, BUILD_TIME),
             tft->width() / 2, y);
+
+        y += 40;
+        tft->setTextFont(1);
+        tft->drawString(utl_sprintf("PSRAM      : %07d", ESP.getFreePsram()),
+                        tft->width() / 2, y);
+        y += 20;
+        tft->drawString(utl_sprintf("HEAP       : %07d", ESP.getFreeHeap()),
+                        tft->width() / 2, y);
+        y += 20;
+        tft->drawString(utl_sprintf("Min. PSRAM : %07d", ESP.getMinFreePsram()),
+                        tft->width() / 2, y);
+        y += 20;
+        tft->drawString(utl_sprintf("Min. HEAP  : %07d", ESP.getMinFreeHeap()),
+                        tft->width() / 2, y);
     }
 };
 

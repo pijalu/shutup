@@ -49,7 +49,7 @@ public:
     // reset all states
     void reset();
     void addToSensorSeries(int series, SensorData data);
-    bool getCurrentStatus(int series);
+    int getCurrentStatus(int series);
     std::list<SensorData> getSeries(int series);
 };
 

@@ -59,7 +59,7 @@ private:
     void drawSensorsData(unsigned long now = millis()) {
         // Initialize the graph buffer
         TFT_eSprite b = TFT_eSprite(getTft());
-        b.setColorDepth(4);  // 4 colors
+        b.setColorDepth(8);  // 4 colors
 
         b.createSprite(getWidth(), getHeight());
         b.fillSprite(TFT_BLACK);
@@ -71,24 +71,25 @@ private:
             auto pad = laneHeight / 4;
 
             if (data.empty()) {
-                b.drawLine(getWidth(), drawY - pad + laneHeight, 0,
-                           drawY - pad + laneHeight, TFT_RED);
                 continue;
             }
 
             int last_X = getWidth();
-            int last_state = !!data.front().getState();
+            int last_state =
+                (data.front().getState() == SENSOR_UNBLOCKED);  // up for open
 
             for (auto sd : data) {
                 int msSinceNow = (now - sd.getTimeStamp());
 
                 // Calculate the current X position based on time difference
-                int X = getWidth() - (msSinceNow / (msPerPixel * 1.0f));
+                int X = getWidth() - 1 - (msSinceNow / (msPerPixel * 1.0f));
                 if (X < 0) {
                     X = 0;
                 }
                 int oldY = drawY + pad + (last_state * (laneHeight / 2));
-                int Y = drawY + pad + (!!sd.getState() * (laneHeight / 2));
+                int Y =
+                    drawY + pad +
+                    ((sd.getState() == SENSOR_UNBLOCKED) * (laneHeight / 2));
 
                 // draw line switch
                 if (oldY != Y) {
@@ -101,7 +102,8 @@ private:
                 b.drawLine(last_X, Y, X, Y, TFT_WHITE);
 
                 last_X = X;
-                last_state = !!sd.getState();
+                last_state =
+                    (sd.getState() == SENSOR_UNBLOCKED);  // up for open
 
                 // Cull older data
                 if (X == 0)
