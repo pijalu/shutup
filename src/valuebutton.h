@@ -29,7 +29,7 @@ public:
               label, value, min_value, max_value, step);
 
         plusBtn = new Rect(getX() + getWidth() - 20, getY(), 15, getHeight());
-        minusBtn = new Rect(getX() + getWidth() - 55, getY(), 15, getHeight());
+        minusBtn = new Rect(getX() + getWidth() - 75, getY(), 15, getHeight());
     }
 
     bool onClick(int x, int y) override {
@@ -75,14 +75,15 @@ public:
         spr.setTextColor(textColor);
         spr.drawString(label, 5, getHeight() / 2);
 
-        spr.drawString(utl_sprintf(fmt, value), getWidth() - 35,
+        spr.setTextDatum(MC_DATUM);
+        spr.drawString(utl_sprintf(fmt, value), getWidth() - 40,
                        getHeight() / 2);
 
         if (value > min_value) {
             spr.fillRect(minusBtn->x() - getX(), minusBtn->y() - getY(),
                          minusBtn->width(), minusBtn->height(), TFT_LIGHTGREY);
-            spr.drawRect(getWidth() - 55, 0, 15, getHeight(), TFT_WHITE);
-            spr.drawString("<", getWidth() - 50, getHeight() / 2);
+            spr.drawRect(getWidth() - 75, 0, 15, getHeight(), TFT_WHITE);
+            spr.drawString("<", getWidth() - 70, getHeight() / 2);
         }
 
         if (value < max_value) {

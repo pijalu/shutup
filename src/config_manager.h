@@ -14,10 +14,24 @@
 #include "defs.h"
 #include "utils.h"
 
+// Config file location
 #define CONFIG_FILE "/config.txt"
+// Defaut sensor level (0-1) when blocked
 #define SENSOR_BLOCKED_LEVEL "sensor_blocked_level"
+// Distance between S1 and S2 in mm
 #define S1S2_DISTANCE "s1s2_distance"
+// Distance between S2 and S3 in mm
 #define S2S3_DISTANCE "s2s3_distance"
+
+// Distance correction between s1s2 in tenth of mm
+#define S1S2_CORRECTION "s1s2_correction"
+
+// Distance correction between s1s2 in tenth of mm
+#define S2S3_CORRECTION "s2s3_correction"
+
+// Maximum duration between start of change (unblocked with all blocked on S1
+// and blocked state on S3 in MS
+#define MAX_MEASURE_DURATION "max_duration"
 
 class ConfigManager {
 private:

@@ -33,6 +33,13 @@ void init_config() {
     defaults[S2S3_DISTANCE] =
         "16";  // What is the distance between S2 and S3 in mm
 
+    defaults[S1S2_CORRECTION] =
+        "0";  // What is the distance between S1 and S2 in mm
+    defaults[S2S3_CORRECTION] =
+        "0";  // What is the distance between S2 and S3 in mm
+
+    defaults[MAX_MEASURE_DURATION] = "2000";
+
     // Load default
     ConfigManager::getInstance().setDefaultConfig(defaults);
     log_d("Loaded default config");
