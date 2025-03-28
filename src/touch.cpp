@@ -22,8 +22,6 @@
 #ifdef TOUCH_CAP
 #include <Adafruit_FT6206.h>
 Adafruit_FT6206 ctp = Adafruit_FT6206();
-#else
-extern TFT_eSPI tft;
 #endif
 
 void touchSetup() {
@@ -35,11 +33,11 @@ void touchSetup() {
     uint16_t calibrationData[5];
     uint8_t calDataOK = 0;
 
-    tft.println("calibration run");
+    auto tft = getTft();
 #ifndef SIM
     // check if calibration file exists
     if (SPIFFS.exists(CALIBRATION_FILE)) {
-        File f = SPIFFS.open(CALIBRATION_FILE, "r");
+        auto f = SPIFFS.open(CALIBRATION_FILE, "r");
         if (f) {
             if (f.readBytes((char *)calibrationData, 14) == 14)
                 calDataOK = 1;
@@ -49,13 +47,13 @@ void touchSetup() {
 #endif
     if (calDataOK) {
         // calibration data valid
-        tft.setTouch(calibrationData);
+        tft->setTouch(calibrationData);
     } else {
         // data not valid. recalibrate
-        tft.calibrateTouch(calibrationData, TFT_WHITE, TFT_RED, 15);
+        tft->calibrateTouch(calibrationData, TFT_WHITE, TFT_RED, 15);
 #ifndef SIM
         // store data
-        File f = SPIFFS.open(CALIBRATION_FILE, "w");
+        auto f = SPIFFS.open(CALIBRATION_FILE, "w");
         if (f) {
             f.write((const unsigned char *)calibrationData, 14);
             f.close();
@@ -87,7 +85,7 @@ bool getTouch(uint16_t *x, uint16_t *y, uint16_t *z) {
     *y = p.y;
     *z = p.z;
 #else
-    if (!tft.getTouch(x, y)) {
+    if (!getTft()->getTouch(x, y)) {
         lastTouchTime = 0;  // reset
         return false;
     }
@@ -96,15 +94,15 @@ bool getTouch(uint16_t *x, uint16_t *y, uint16_t *z) {
 
 #ifdef TOUCH_DEBOUNCE
     // Debounce logic: Check if the touch location has changed significantly
-    if (abs(p.x - lastX) > TOUCH_THRESHOLD ||
-        abs(p.y - lastY) > TOUCH_THRESHOLD) {  // Adjust threshold as needed
-        lastX = p.x;
-        lastY = p.y;
+    if (abs(*x - lastX) > TOUCH_THRESHOLD ||
+        abs(*y - lastY) > TOUCH_THRESHOLD) {  // Adjust threshold as needed
+        lastX = *x;
+        lastY = *y;
     }
     // If the touch location hasn't changed significantly, check debounce
     // time
     if (millis() - lastTouchTime < debounceDelay) {
-        log_d("Touch debounced: (%d, %d) [last: %d]", p.x, p.y, lastTouchTime);
+        log_d("Touch debounced: (%d, %d) [last: %d]", *x, *y, lastTouchTime);
         return false;  // Ignore the touch if it's within the debounce delay
     }
     lastTouchTime = millis();  // Record the time of the new touch
