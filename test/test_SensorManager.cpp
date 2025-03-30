@@ -1,6 +1,6 @@
 #include <unity.h>
 
-#include "SensorManager.cpp"
+#include "SensorManager.h"
 
 void setUp(void) {
     // set stuff up here
@@ -15,94 +15,107 @@ void test_singleton(void) {
     TEST_ASSERT(sm != NULL);
 }
 
-void test_addToSensorSeries(void) {
+void test_sensorManagerState(void) {
     SensorManager* sm = new SensorManager();
-    sm->addToSensorSeries(0, SensorData(true, 1));
-    sm->addToSensorSeries(1, SensorData(true, 2));
-    sm->addToSensorSeries(2, SensorData(true, 3));
-
-    TEST_ASSERT_EQUAL(sm->getSeries(0).size(), 1);
-    TEST_ASSERT_EQUAL(sm->getSeries(1).size(), 1);
-    TEST_ASSERT_EQUAL(sm->getSeries(2).size(), 1);
-
-    sm->reset();
-    TEST_ASSERT(sm->getSeries(0).empty());
-    TEST_ASSERT(sm->getSeries(1).empty());
-    TEST_ASSERT(sm->getSeries(2).empty());
+    // Capture should be ready
+    TEST_ASSERT_EQUAL(SC_READY, sm->getCurrentCaptureStatus());
+    // Status should be unknown
+    TEST_ASSERT_EQUAL(SENSOR_UNKNOWN, sm->getCurrentSensorStatus(SENSOR_1));
+    TEST_ASSERT_EQUAL(SENSOR_UNKNOWN, sm->getCurrentSensorStatus(SENSOR_2));
+    TEST_ASSERT_EQUAL(SENSOR_UNKNOWN, sm->getCurrentSensorStatus(SENSOR_2));
+    // Check currect Capture
+    TEST_ASSERT_EQUAL(CAPTURE_UNKNOWN,
+                      sm->getCurrentCapture()->getCaptureState());
+    TEST_ASSERT_EQUAL(CAPTURE_FLAG_NONE,
+                      sm->getCurrentCapture()->getCaptureFlags());
 }
 
-void test_addManyToSensorSeries(void) {
+void test_addSensorDataAndStateChange(void) {
     SensorManager* sm = new SensorManager();
-    for (int i = 0; i < MAX_SENSORDATA + 10; ++i) {
-        sm->addToSensorSeries(0, SensorData(i % 2 == 0, i));
-        sm->addToSensorSeries(1, SensorData(i % 2 == 0, i));
-        sm->addToSensorSeries(2, SensorData(i % 2 == 0, i));
-    }
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA, sm->getSeries(0).size());
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA, sm->getSeries(1).size());
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA, sm->getSeries(2).size());
-}
+    int ts = 0;
 
-void test_addManySameToSensorSeries(void) {
-    SensorManager* sm = new SensorManager();
-    for (int i = 0; i < MAX_SENSORDATA + 10; ++i) {
-        sm->addToSensorSeries(0, SensorData(true, i));
-        sm->addToSensorSeries(1, SensorData(false, i));
-        sm->addToSensorSeries(2, SensorData(true, i));
-    }
-    TEST_ASSERT_EQUAL(1, sm->getSeries(0).size());
-    TEST_ASSERT_EQUAL(1, sm->getSeries(1).size());
-    TEST_ASSERT_EQUAL(1, sm->getSeries(2).size());
+    // add 3 sensor as blocked - switch to ready only when 3 are blocked
+    sm->add(SensorData(SENSOR_1, SENSOR_BLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_UNKNOWN,
+                      sm->getCurrentCapture()->getCaptureState());
 
-    // state should match status and last cnt
-    TEST_ASSERT_EQUAL(true, sm->getSeries(0).front().getState());
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA + 9,
-                      sm->getSeries(0).front().getTimeStamp());
+    sm->add(SensorData(SENSOR_2, SENSOR_BLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_UNKNOWN,
+                      sm->getCurrentCapture()->getCaptureState());
+    sm->add(SensorData(SENSOR_3, SENSOR_BLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_READY,
+                      sm->getCurrentCapture()->getCaptureState());
 
-    TEST_ASSERT_EQUAL(false, sm->getSeries(1).front().getState());
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA + 9,
-                      sm->getSeries(1).front().getTimeStamp());
+    // No records at this point
+    TEST_ASSERT_EQUAL(0, sm->getCurrentCapture()->getData().size());
 
-    TEST_ASSERT_EQUAL(true, sm->getSeries(2).front().getState());
-    TEST_ASSERT_EQUAL(MAX_SENSORDATA + 9,
-                      sm->getSeries(2).front().getTimeStamp());
-}
+    // Add a deblock on sensor 3: We should go back to unknown
+    sm->add(SensorData(SENSOR_3, SENSOR_UNBLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_UNKNOWN,
+                      sm->getCurrentCapture()->getCaptureState());
 
-void test_exceptions(void) {
-    SensorManager* sm = new SensorManager();
-    // Test out of bounds
-    try {
-        sm->addToSensorSeries(-1, SensorData(true, 0));
-        TEST_FAIL_MESSAGE("Expected std::out_of_range");
-    } catch (std::out_of_range& e) {
-        // Expected
-    } catch (...) {
-        TEST_FAIL_MESSAGE(
-            "Expected std::out_of_range but got another exception");
-    }
-}
+    // Back to ready
+    sm->add(SensorData(SENSOR_3, SENSOR_BLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_READY,
+                      sm->getCurrentCapture()->getCaptureState());
+    TEST_ASSERT_EQUAL(0, sm->getCurrentCapture()->getData().size());
 
-void test_getStateWithValue(void) {
-    SensorManager* sm = new SensorManager();
+    // Start capture - 1 elem
+    sm->add(SensorData(SENSOR_1, SENSOR_UNBLOCKED, ts++));
+    TEST_ASSERT_EQUAL(CAPTURE_STARTED,
+                      sm->getCurrentCapture()->getCaptureState());
+    TEST_ASSERT_EQUAL(1, sm->getCurrentCapture()->getData().size());
 
-    // Test get state
-    // Empty series is false
-    TEST_ASSERT_EQUAL(false, sm->getCurrentStatus(0));
+    // open all
+    sm->add(SensorData(SENSOR_2, SENSOR_UNBLOCKED, ts++));
+    sm->add(SensorData(SENSOR_3, SENSOR_UNBLOCKED, ts++));
+    TEST_ASSERT_EQUAL(3, sm->getCurrentCapture()->getData().size());
+    TEST_ASSERT_EQUAL(CAPTURE_STARTED,
+                      sm->getCurrentCapture()->getCaptureState());
+    // We were full open
+    TEST_ASSERT_EQUAL(CAPTURE_FLAG_FULLOPEN,
+                      sm->getCurrentCapture()->getCaptureFlags());
 
-    // check with data
-    sm->addToSensorSeries(0, SensorData(true, 1));
-    TEST_ASSERT_EQUAL(true, sm->getCurrentStatus(0));
-    sm->addToSensorSeries(0, SensorData(false, 1));
-    TEST_ASSERT_EQUAL(true, sm->getCurrentStatus(0));
+    sm->add(SensorData(SENSOR_1, SENSOR_BLOCKED, ts++));
+    sm->add(SensorData(SENSOR_2, SENSOR_BLOCKED, ts++));
+    sm->add(SensorData(SENSOR_3, SENSOR_BLOCKED, ts++));
+    TEST_ASSERT_EQUAL(6, sm->getCurrentCapture()->getData().size());
+    TEST_ASSERT_EQUAL(CAPTURE_DONE, sm->getCurrentCapture()->getCaptureState());
+    // no bounce
+    TEST_ASSERT_EQUAL(CAPTURE_FLAG_FULLOPEN,
+                      sm->getCurrentCapture()->getCaptureFlags());
+
+    sm->add(SensorData(SENSOR_3, SENSOR_UNBLOCKED, ts++));
+    // we bounced
+    TEST_ASSERT_NOT_EQUAL(CAPTURE_FLAG_FULLOPEN,
+                          sm->getCurrentCapture()->getCaptureFlags());
+    // Still open
+    TEST_ASSERT_TRUE(sm->getCurrentCapture()->getCaptureFlags() &&
+                     CAPTURE_FLAG_FULLOPEN);
+    TEST_ASSERT_TRUE(sm->getCurrentCapture()->getCaptureFlags() &&
+                     CAPTURE_FLAG_BOUNCE);
+    TEST_ASSERT_TRUE(sm->getCurrentCapture()->getCaptureFlags() &&
+                     CAPTURE_FLAG_EBOUNCE);
+    sm->add(SensorData(SENSOR_3, SENSOR_BLOCKED, ts++));
+
+    // We didn't add any events for the bounce
+    TEST_ASSERT_EQUAL(6, sm->getCurrentCapture()->getData().size());
+
+    TEST_ASSERT_EQUAL(SC_READY, sm->getCurrentCaptureStatus());
+    TEST_ASSERT_EQUAL(1, sm->getCaptures().size());
+    // close pending capture
+    sm->yield(ts - 1);
+    // We switched current capture
+    TEST_ASSERT_EQUAL(2, sm->getCaptures().size());
+    TEST_ASSERT_EQUAL(SC_DONE, sm->getCapture(1)->getStatus());
+    TEST_ASSERT_EQUAL(SC_READY, sm->getCurrentCaptureStatus());
 }
 
 int main(int argc, char** argv) {
     UNITY_BEGIN();
     RUN_TEST(test_singleton);
-    RUN_TEST(test_addToSensorSeries);
-    RUN_TEST(test_addManyToSensorSeries);
-    RUN_TEST(test_exceptions);
-    RUN_TEST(test_getStateWithValue);
+    RUN_TEST(test_sensorManagerState);
+    RUN_TEST(test_addSensorDataAndStateChange);
 
     UNITY_END();
 }

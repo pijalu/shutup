@@ -47,15 +47,14 @@ public:
 
 class SensorCapture {
 private:
-    int sensorsStatus[MAX_SENSOR] = {SENSOR_UNKNOWN, SENSOR_UNKNOWN,
-                                     SENSOR_UNKNOWN};
-    u_int32_t lastSensortime = 0;
+    int sensorsStatus[MAX_SENSOR];
+    u_int32_t lastSensortime;
 
     std::list<SensorData> data;
-    int captureState = CAPTURE_UNKNOWN;
-    int captureFlags = CAPTURE_FLAG_NONE;
+    int captureState;
+    int captureFlags;
 
-    int status = SC_READY;
+    int status;
 
     void pushSensorData(SensorData sd) {
         if (data.size() >= MAX_SENSORDATA) {
@@ -69,7 +68,13 @@ private:
     }
 
 public:
-    SensorCapture() {
+    SensorCapture()
+        : captureFlags(CAPTURE_FLAG_NONE),
+          lastSensortime(0),
+          captureState(CAPTURE_UNKNOWN),
+          status(SC_READY) {
+        for (int i = 0; i < MAX_SENSOR; ++i)
+            sensorsStatus[i] = SENSOR_UNKNOWN;
     }
 
     void yield(u_int32_t lastSensorTimeToConsider) {
@@ -147,6 +152,10 @@ public:
     int getSensorStatus(int sensor) const {
         return sensorsStatus[sensor];
     }
+
+    std::list<SensorData> getData() const {
+        return data;
+    }
 };
 
 class SensorManager {
@@ -164,20 +173,20 @@ public:
     }
 
     void add(SensorData data) {
-        captures.front().addSensorData(data);
+        getCurrentCapture()->addSensorData(data);
     }
 
-    int getCurrentCaptureStatus() const {
-        return captures.front().getStatus();
+    int getCurrentCaptureStatus() {
+        return getCurrentCapture()->getStatus();
     }
 
-    int getCurrentSensorStatus(int sensor) const {
-        return captures.front().getSensorStatus(sensor);
+    int getCurrentSensorStatus(int sensor) {
+        return getCurrentCapture()->getSensorStatus(sensor);
     }
 
     void yield(u_int32_t lastSensorTimeToConsider) {
-        captures.front().yield(lastSensorTimeToConsider);
-        if (captures.front().getStatus() == SC_DONE) {
+        getCurrentCapture()->yield(lastSensorTimeToConsider);
+        if (getCurrentCapture()->getStatus() == SC_DONE) {
             if (captures.size() >= MAX_CAPTURES) {
                 captures.pop_back();
             }
@@ -185,8 +194,22 @@ public:
         }
     }
 
-    std::list<SensorCapture> getCaptures() const {
+    std::list<SensorCapture> getCaptures() {
         return captures;
+    }
+
+    SensorCapture* getCurrentCapture() {
+        return &(captures.front());
+    }
+
+    const SensorCapture* getCapture(int n = 0) {
+        if (captures.size() > n) {
+            if (n == 0)
+                return &captures.front();
+            // go next
+            return &(*std::next(captures.begin(), n));
+        }
+        return nullptr;
     }
 };
 

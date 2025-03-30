@@ -63,6 +63,15 @@
     "version": "0.2.0",
     "configurations": [
       {
+        "name": "unit test (LLDB)",
+        "type": "lldb",
+        "request": "launch",
+        "name": "Launch",
+        "program": "${workspaceFolder}/.pio/build/unittest/program",
+        "args": [],
+        "cwd": "${workspaceFolder}"
+      },
+      {
         "name": "Wokwi GDB",
         "type": "cppdbg",
         "request": "launch",
