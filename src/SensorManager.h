@@ -49,6 +49,7 @@ class SensorCapture {
 private:
     int sensorsStatus[MAX_SENSOR];
     u_int32_t lastSensortime;
+    u_int32_t firstSensortime;
 
     std::list<SensorData> data;
     int captureState;
@@ -56,30 +57,45 @@ private:
 
     int status;
 
+    void resetCapture() {
+        data.clear();
+        lastSensortime = std::numeric_limits<u_int32_t>::min();
+        firstSensortime = std::numeric_limits<u_int32_t>::max();
+        captureFlags = CAPTURE_FLAG_NONE;
+    }
+
     void pushSensorData(SensorData sd) {
         if (data.size() >= MAX_SENSORDATA) {
             data.pop_back();
         }
         data.push_front(sd);
 
-        // save last sensor time
+        // save min/max sensor time
         if (sd.getTimeStamp() > lastSensortime)
             lastSensortime = sd.getTimeStamp();
+        if (sd.getTimeStamp() < firstSensortime)
+            firstSensortime = sd.getTimeStamp();
     }
 
 public:
-    SensorCapture()
-        : captureFlags(CAPTURE_FLAG_NONE),
-          lastSensortime(0),
-          captureState(CAPTURE_UNKNOWN),
-          status(SC_READY) {
+    SensorCapture() : captureState(CAPTURE_UNKNOWN), status(SC_READY) {
         for (int i = 0; i < MAX_SENSOR; ++i)
             sensorsStatus[i] = SENSOR_UNKNOWN;
+        resetCapture();
     }
 
-    void yield(u_int32_t lastSensorTimeToConsider) {
-        if (status == SC_READY && lastSensortime <= lastSensorTimeToConsider)
-            status = SC_DONE;
+    void yield(u_int32_t now, u_int32_t maxCaptureDuration,
+               u_int32_t maxBounceDuration) {
+        switch (captureState) {
+            case CAPTURE_DONE:
+                if (lastSensortime + maxBounceDuration < now)
+                    status = SC_DONE;
+                break;
+            case CAPTURE_STARTED:
+                if (firstSensortime + maxCaptureDuration < now) {
+                    status = SC_DONE_ERR;
+                }
+        }
     }
 
     void addSensorData(SensorData sd) {
@@ -92,8 +108,7 @@ public:
                     sensorsStatus[SENSOR_2] == SENSOR_BLOCKED &&
                     sensorsStatus[SENSOR_3] == SENSOR_BLOCKED) {
                     captureState = CAPTURE_READY;
-                    captureFlags = CAPTURE_FLAG_NONE;
-                    data.clear();
+                    resetCapture();
                 }
                 break;
 
@@ -176,6 +191,10 @@ public:
         getCurrentCapture()->addSensorData(data);
     }
 
+    int getCurrentCaptureState() {
+        return getCurrentCapture()->getCaptureState();
+    }
+
     int getCurrentCaptureStatus() {
         return getCurrentCapture()->getStatus();
     }
@@ -184,9 +203,11 @@ public:
         return getCurrentCapture()->getSensorStatus(sensor);
     }
 
-    void yield(u_int32_t lastSensorTimeToConsider) {
-        getCurrentCapture()->yield(lastSensorTimeToConsider);
-        if (getCurrentCapture()->getStatus() == SC_DONE) {
+    void yield(u_int32_t now, u_int32_t maxCaptureDuration,
+               u_int32_t maxBounceDuration) {
+        getCurrentCapture()->yield(now, maxCaptureDuration, maxBounceDuration);
+        if (getCurrentCapture()->getStatus() == SC_DONE ||
+            getCurrentCapture()->getStatus() == SC_DONE_ERR) {
             if (captures.size() >= MAX_CAPTURES) {
                 captures.pop_back();
             }

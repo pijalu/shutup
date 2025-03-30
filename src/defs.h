@@ -24,8 +24,9 @@
 #define CAPTURE_FLAG_SBOUNCE 0x08
 
 // Sensor Capture status
-#define SC_READY 0  // On going
-#define SC_DONE 1   // done
+#define SC_READY 0     // On going
+#define SC_DONE 1      // done
+#define SC_DONE_ERR 2  // done but never finished
 
 // number of sensors
 #define MAX_SENSOR 3

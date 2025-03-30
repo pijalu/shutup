@@ -103,10 +103,14 @@ void test_addSensorDataAndStateChange(void) {
 
     TEST_ASSERT_EQUAL(SC_READY, sm->getCurrentCaptureStatus());
     TEST_ASSERT_EQUAL(1, sm->getCaptures().size());
-    // close pending capture
-    sm->yield(ts - 1);
+    // Run yield pending capture - should not change
+    sm->yield(ts - 1, 0, 2);
+    TEST_ASSERT_EQUAL(SC_READY, sm->getCapture(0)->getStatus());
+
+    sm->yield(ts, 0, 2);
     // We switched current capture
     TEST_ASSERT_EQUAL(2, sm->getCaptures().size());
+
     TEST_ASSERT_EQUAL(SC_DONE, sm->getCapture(1)->getStatus());
     TEST_ASSERT_EQUAL(SC_READY, sm->getCurrentCaptureStatus());
 }

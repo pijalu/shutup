@@ -6,6 +6,7 @@
 
 #include "SensorManager.h"
 #include "config.h"
+#include "config_manager.h"
 #include "defs.h"
 #include "touch.h"
 #include "ui.h"
@@ -102,6 +103,13 @@ void setup() {
 
 void loop() {
     ui_loop();
+    int max_measure_duration =
+        ConfigManager::getInstance().getInt(MAX_MEASURE_DURATION);
+    int max_measure_bounce =
+        ConfigManager::getInstance().getInt(MAX_MEASURE_BOUNCE);
+
+    SensorManager::getInstance()->yield(millis(), max_measure_duration,
+                                        max_measure_bounce);
 #ifdef SIM
     {
         // return;

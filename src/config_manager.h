@@ -136,7 +136,7 @@ public:
     }
 
     // Retrieve value as int (with optional default)
-    int getInt(const std::string& key, int defaultValue) {
+    int getInt(const std::string& key, int defaultValue = -1) {
         auto it = config_.find(key);
         if (it != config_.end()) {
             log_d("Config: Key '%s' exists with value '%s'.\n", key.c_str(),

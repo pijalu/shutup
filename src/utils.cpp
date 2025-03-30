@@ -39,6 +39,7 @@ void init_config() {
         "0";  // What is the distance between S2 and S3 in mm
 
     defaults[MAX_MEASURE_DURATION] = "2000";
+    defaults[MAX_MEASURE_BOUNCE] = "100";
 
     // Load default
     ConfigManager::getInstance().setDefaultConfig(defaults);
