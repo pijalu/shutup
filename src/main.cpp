@@ -24,22 +24,19 @@ static int sensor_3 = 0;
 void IRAM_ATTR isr_sensor_1() {
     char buffer[50];
     sensor_1 = !sensor_1;
-    auto data = SensorData(sensor_1, millis());
-    SensorManager::getInstance()->addToSensorSeries(0, data);
+    SensorManager::getInstance()->add(SensorData(SENSOR_1, sensor_1, millis()));
 }
 
 void IRAM_ATTR isr_sensor_2() {
     char buffer[50];
     sensor_2 = !sensor_2;
-    auto data = SensorData(sensor_2, millis());
-    SensorManager::getInstance()->addToSensorSeries(1, data);
+    SensorManager::getInstance()->add(SensorData(SENSOR_2, sensor_2, millis()));
 }
 
 void IRAM_ATTR isr_sensor_3() {
     char buffer[50];
     sensor_3 = !sensor_3;
-    auto data = SensorData(sensor_3, millis());
-    SensorManager::getInstance()->addToSensorSeries(2, data);
+    SensorManager::getInstance()->add(SensorData(SENSOR_3, sensor_3, millis()));
 }
 
 void setup() {
@@ -85,9 +82,10 @@ void setup() {
     }
 
     // Set current status
-    SensorManager::getInstance()->addToSensorSeries(0, sensor_1);
-    SensorManager::getInstance()->addToSensorSeries(1, sensor_2);
-    SensorManager::getInstance()->addToSensorSeries(2, sensor_3);
+    auto now = millis();
+    SensorManager::getInstance()->add(SensorData(SENSOR_1, sensor_1, now));
+    SensorManager::getInstance()->add(SensorData(SENSOR_2, sensor_2, now));
+    SensorManager::getInstance()->add(SensorData(SENSOR_3, sensor_3, now));
 
     // Attach to ISR
     attachInterrupt(digitalPinToInterrupt(SENSOR_1_PIN), isr_sensor_1, CHANGE);

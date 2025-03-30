@@ -33,6 +33,9 @@
 // and blocked state on S3 in MS
 #define MAX_MEASURE_DURATION "max_duration"
 
+// Max duration to wait for possible bounce
+#define MAX_MEASURE_BOUNCE "max_bounce"
+
 class ConfigManager {
 private:
     std::map<std::string, std::string> config_;

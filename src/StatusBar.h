@@ -40,7 +40,8 @@ public:
         int radius = (getHeight() / 2) - 5;
         for (int sensor = 0; sensor < MAX_SENSOR; sensor++) {
             int pos = 2 * (sensor + 1) + radius + (2 * radius * sensor);
-            int state = SensorManager::getInstance()->getCurrentStatus(sensor);
+            int state =
+                SensorManager::getInstance()->getCurrentSensorStatus(sensor);
             spr.fillCircle(pos, getHeight() / 2, radius,
                            state == SENSOR_BLOCKED ? TFT_GREEN : TFT_RED);
         }

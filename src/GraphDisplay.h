@@ -64,7 +64,7 @@ private:
         b.createSprite(getWidth(), getHeight());
         b.fillSprite(TFT_BLACK);
         drawGrid(&b);
-
+#if 0
         for (int sensor = 0; sensor < MAX_SENSOR; ++sensor) {
             auto data = SensorManager::getInstance()->getSeries(sensor);
             auto drawY = sensor * laneHeight;
@@ -113,7 +113,7 @@ private:
                 b.drawLine(last_X, drawY + pad, 0, drawY + pad, TFT_WHITE);
             }
         }  // end all sensors
-
+#endif
         b.pushSprite(getX(), getY());  // Push sprite to display
         b.deleteSprite();
     }
